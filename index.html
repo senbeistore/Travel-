@@ -370,18 +370,9 @@ function HomeScreen({trips,loading,onOpen,onJoin,onCreate,onRemove}){
       h("div",{style:{position:"absolute",top:-40,right:-40,width:160,height:160,borderRadius:"50%",border:"1.5px solid rgba(56,189,248,0.1)",pointerEvents:"none"}}),
       h("div",{style:{position:"absolute",bottom:-60,left:-60,width:200,height:200,borderRadius:"50%",border:"1px solid rgba(148,163,184,0.08)",pointerEvents:"none"}}),
       h("div",{style:{position:"relative",zIndex:1}},
-        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}},
-          h("div",null,
-            h("div",{style:{color:"#64748b",fontSize:11,letterSpacing:3,textTransform:"uppercase",marginBottom:8,fontWeight:600}},"旅遊記帳"),
-            h("div",{style:{color:"#f8fafc",fontSize:30,fontWeight:900,letterSpacing:-1}},"我的行程")
-          ),
-          h("a",{href:"https://www.instagram.com/senbei.store",target:"_blank",style:{textDecoration:"none",flexShrink:0}},
-            h("div",{style:{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"6px 10px",textAlign:"center"}},
-              h("div",{style:{color:"#f8fafc",fontSize:12,fontWeight:800,letterSpacing:.5}},"仙貝童裝"),
-              h("div",{style:{color:"#38bdf8",fontSize:10,marginTop:1}})
-            )
-          )
-        ),
+        h("div",{style:{color:"#38bdf8",fontSize:11,fontWeight:700,letterSpacing:2,marginBottom:6}},"senbei.store"),
+        h("div",{style:{color:"#64748b",fontSize:11,letterSpacing:3,textTransform:"uppercase",marginBottom:8,fontWeight:600}},"旅遊記帳"),
+        h("div",{style:{color:"#f8fafc",fontSize:30,fontWeight:900,marginBottom:24,letterSpacing:-1}},"我的行程"),
         h("div",{style:{display:"flex",gap:10}},
           h("button",{onClick:()=>{setShowNew(p=>!p);setShowJoin(false);},
             style:{flex:1,padding:"13px 0",border:"none",borderRadius:50,
@@ -486,7 +477,7 @@ function HomeScreen({trips,loading,onOpen,onJoin,onCreate,onRemove}){
       })
     ),
     h("div",{style:{textAlign:"center",padding:"24px 0 40px",color:"#94a3b8",fontSize:12}},
-      "IG ",h("a",{href:"https://www.instagram.com/senbei.store",target:"_blank",style:{color:"#38bdf8",textDecoration:"none",fontWeight:600}},"@senbei.store")," 監製此網站"
+      "由 仙貝童裝 @senbei.store 為家庭旅遊打造"
     )
   );
 }
