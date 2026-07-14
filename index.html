@@ -204,8 +204,7 @@ function App(){
       await dbSave(code,data);
       // Creator defaults to first member
       if((meta.members||[]).length>0)localStorage.setItem("tl-who-"+code,meta.members[0]);
-      saveMyTrips([{code,...meta,created:data.created},...myTrips]);
-      setTripData(data);setActiveCode(code);setView("trip");subscribeTrip(code);
+      saveMyTrips([{code,...meta,created:data.created},...myTrips]);      setTripData(data);setActiveCode(code);setView("trip");subscribeTrip(code);
     }catch(e){alert("建立失敗: "+e.message);}
     finally{setLoading(false);}
   };
@@ -217,7 +216,7 @@ function App(){
     try{
       const data=await dbLoad(clean);
       if(!data)throw new Error("找不到行程，請確認邀請碼");
-      saveMyTrips([...myTrips,{code:clean,name:data.name,emoji:data.emoji,members:data.members,created:data.created}]);
+      saveMyTrips([...myTrips,{code:clean,name:data.name,emoji:data.emoji,members:data.members,created:data.created,creator:data.creator,startDate:data.startDate,endDate:data.endDate}]);
       const saved=localStorage.getItem("tl-who-"+clean);
       if(!saved&&(data.members||[]).length>1){
         setWhoAmI({code:clean,members:data.members,data});
@@ -275,47 +274,84 @@ function HomeScreen({trips,loading,onOpen,onJoin,onCreate,onRemove}){
   const[name,setName]=useState("");
   const[emoji,setEmoji]=useState("✈️");
   const[members,setMembers]=useState([""]);
+  const[startDate,setStartDate]=useState("");
+  const[endDate,setEndDate]=useState("");
   const[delCode,setDelCode]=useState(null);
 
   const create=()=>{
     if(!name.trim())return;
     const ms=members.filter(m=>m.trim()).map(m=>m.trim());
-    onCreate({name:name.trim(),emoji,members:ms.length?ms:["我"]});
-    setName("");setEmoji("✈️");setMembers([""]);setShowNew(false);
+    onCreate({name:name.trim(),emoji,members:ms.length?ms:["我"],startDate,endDate,creator:ms[0]||"我"});
+    setName("");setEmoji("✈️");setMembers([""]);setStartDate("");setEndDate("");setShowNew(false);
   };
 
-  return h("div",{style:{background:"#f0f4f8",minHeight:"100vh"}},
-    h("div",{style:{background:"#1e293b",padding:"48px 20px 20px"}},
-      h("div",{style:{marginBottom:16}},
-        h("div",{style:{color:"#94a3b8",fontSize:11,letterSpacing:1,textTransform:"uppercase"}},"旅遊記帳"),
-        h("div",{style:{color:"#f1f5f9",fontSize:24,fontWeight:800,marginTop:4}},"我的行程")
-      ),
-      h("div",{style:{display:"flex",gap:10}},
-        h("button",{onClick:()=>{setShowNew(p=>!p);setShowJoin(false);},
-          style:{flex:1,padding:"11px 0",border:"none",borderRadius:12,background:showNew?"#38bdf8":"rgba(255,255,255,.12)",color:showNew?"#0f172a":"#f1f5f9",fontWeight:700,fontSize:14,cursor:"pointer"}},
-          "＋ 建立行程"),
-        h("button",{onClick:()=>{setShowJoin(p=>!p);setShowNew(false);},
-          style:{flex:1,padding:"11px 0",border:"none",borderRadius:12,background:showJoin?"#38bdf8":"rgba(255,255,255,.12)",color:showJoin?"#0f172a":"#f1f5f9",fontWeight:700,fontSize:14,cursor:"pointer"}},
-          "🔗 輸入邀請碼")
+  const fmtTripDate=(s,e)=>{
+    if(!s&&!e)return null;
+    const fmt=d=>d.replace(/-/g,'.');
+    if(!e)return fmt(s);
+    const sp=s.split('-'),ep=e.split('-');
+    return `${fmt(s)} - ${ep[1]}.${ep[2]}`;
+  };
+
+  // World map grid style
+  const mapBg={
+    background:"linear-gradient(160deg,#0c1525 0%,#1e293b 55%,#0f1e35 100%)",
+    backgroundImage:"linear-gradient(rgba(148,163,184,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,0.07) 1px,transparent 1px)",
+    backgroundSize:"32px 32px",
+  };
+
+  return h("div",{style:{background:"#f1f5f9",minHeight:"100vh"}},
+    /* Header with map background */
+    h("div",{style:{...mapBg,padding:"52px 20px 24px",position:"relative",overflow:"hidden"}},
+      /* Decorative circles (globe feel) */
+      h("div",{style:{position:"absolute",top:"-60px",right:"-60px",width:220,height:220,borderRadius:"50%",border:"1px solid rgba(148,163,184,0.1)",pointerEvents:"none"}}),
+      h("div",{style:{position:"absolute",top:"-30px",right:"-30px",width:140,height:140,borderRadius:"50%",border:"1px solid rgba(148,163,184,0.08)",pointerEvents:"none"}}),
+      h("div",{style:{position:"relative",zIndex:1}},
+        h("div",{style:{color:"#94a3b8",fontSize:11,letterSpacing:2,textTransform:"uppercase",marginBottom:6}},"旅遊記帳"),
+        h("div",{style:{color:"#f8fafc",fontSize:28,fontWeight:800,marginBottom:20,letterSpacing:-.5}},"我的行程"),
+        h("div",{style:{display:"flex",gap:10}},
+          h("button",{onClick:()=>{setShowNew(p=>!p);setShowJoin(false);},
+            style:{flex:1,padding:"12px 0",border:"none",borderRadius:50,background:showNew?"#38bdf8":"rgba(255,255,255,.13)",color:showNew?"#0f172a":"#f1f5f9",fontWeight:700,fontSize:14,cursor:"pointer",backdropFilter:"blur(8px)"}},
+            "＋ 建立行程"),
+          h("button",{onClick:()=>{setShowJoin(p=>!p);setShowNew(false);},
+            style:{flex:1,padding:"12px 0",border:"none",borderRadius:50,background:showJoin?"#38bdf8":"rgba(255,255,255,.13)",color:showJoin?"#0f172a":"#f1f5f9",fontWeight:700,fontSize:14,cursor:"pointer",backdropFilter:"blur(8px)"}},
+            "🔗 輸入邀請碼")
+        )
       )
     ),
-    showJoin&&h("div",{style:{margin:"16px 16px 0",background:"#fff",borderRadius:20,padding:18,boxShadow:"0 2px 8px rgba(0,0,0,.08)"}},
+
+    /* Join panel */
+    showJoin&&h("div",{style:{margin:"14px 16px 0",background:"#fff",borderRadius:20,padding:18,boxShadow:"0 2px 12px rgba(0,0,0,.08)"}},
       h("div",{style:{fontWeight:700,color:"#1e293b",fontSize:16,marginBottom:12}},"輸入邀請碼加入行程"),
       h("input",{autoFocus:true,value:joinCode,onChange:e=>setJoinCode(e.target.value.toUpperCase()),
         placeholder:"例：AB12CD",maxLength:6,
-        style:{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:12,padding:"14px",fontSize:24,fontWeight:800,outline:"none",letterSpacing:8,textAlign:"center",color:"#1e293b",marginBottom:12}}),
+        style:{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:12,padding:"14px",fontSize:26,fontWeight:800,outline:"none",letterSpacing:10,textAlign:"center",color:"#1e293b",marginBottom:12}}),
       h("button",{onClick:()=>{if(joinCode.length===6){onJoin(joinCode);setJoinCode("");setShowJoin(false);}},
         disabled:joinCode.length!==6,
         style:{width:"100%",padding:"13px 0",border:"none",borderRadius:12,background:joinCode.length===6?"#1e293b":"#e2e8f0",color:joinCode.length===6?"#fff":"#94a3b8",fontWeight:700,fontSize:15,cursor:"pointer"}},
         "加入行程")
     ),
-    showNew&&h("div",{style:{margin:"16px 16px 0",background:"#fff",borderRadius:20,padding:18,boxShadow:"0 2px 8px rgba(0,0,0,.08)"}},
+
+    /* New trip panel */
+    showNew&&h("div",{style:{margin:"14px 16px 0",background:"#fff",borderRadius:20,padding:18,boxShadow:"0 2px 12px rgba(0,0,0,.08)"}},
       h("div",{style:{fontWeight:700,color:"#1e293b",fontSize:16,marginBottom:14}},"建立新行程"),
+      /* Emoji picker */
       h("div",{style:{display:"flex",flexWrap:"wrap",gap:4,marginBottom:14}},
         EMOJIS.map(e=>h("button",{key:e,onClick:()=>setEmoji(e),style:{fontSize:20,padding:"4px 5px",borderRadius:8,border:"2px solid",borderColor:emoji===e?"#38bdf8":"transparent",background:emoji===e?"#f0f9ff":"transparent",cursor:"pointer"}},e))
       ),
+      /* Name */
       h("input",{autoFocus:true,value:name,onChange:e=>setName(e.target.value),placeholder:"行程名稱（例：9月名古屋行）",
         style:{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:12,padding:"10px 14px",fontSize:15,outline:"none",marginBottom:14,color:"#1e293b"}}),
+      /* Dates */
+      h("div",{style:{fontSize:12,color:"#94a3b8",fontWeight:600,marginBottom:8}},"旅遊日期"),
+      h("div",{style:{display:"flex",gap:8,marginBottom:14,alignItems:"center"}},
+        h("input",{type:"date",value:startDate,onChange:e=>setStartDate(e.target.value),
+          style:{flex:1,border:"1.5px solid #e2e8f0",borderRadius:10,padding:"8px 10px",fontSize:14,outline:"none",color:"#1e293b"}}),
+        h("span",{style:{color:"#94a3b8",fontSize:13}},"至"),
+        h("input",{type:"date",value:endDate,onChange:e=>setEndDate(e.target.value),
+          style:{flex:1,border:"1.5px solid #e2e8f0",borderRadius:10,padding:"8px 10px",fontSize:14,outline:"none",color:"#1e293b"}})
+      ),
+      /* Members */
       h("div",{style:{fontSize:12,color:"#94a3b8",fontWeight:600,marginBottom:8}},"成員"),
       members.map((m,i)=>h("div",{key:i,style:{display:"flex",alignItems:"center",gap:8,marginBottom:8}},
         h("div",{style:{width:8,height:8,borderRadius:"50%",background:COLORS[i%COLORS.length],flexShrink:0}}),
@@ -330,32 +366,52 @@ function HomeScreen({trips,loading,onOpen,onJoin,onCreate,onRemove}){
         h("button",{onClick:create,disabled:!name.trim(),style:{flex:2,padding:"12px 0",border:"none",borderRadius:12,background:name.trim()?"#1e293b":"#e2e8f0",color:name.trim()?"#fff":"#94a3b8",fontWeight:700,fontSize:14,cursor:"pointer"}},"建立行程")
       )
     ),
-    h("div",{style:{padding:"16px 16px 0"}},
+
+    /* Trip list */
+    h("div",{style:{padding:"14px 16px 0"}},
       trips.length===0&&!showNew&&!showJoin&&h("div",{style:{textAlign:"center",padding:"64px 0",color:"#94a3b8"}},
         h("div",{style:{fontSize:48,marginBottom:12}},"✈️"),
         h("div",{style:{fontSize:16,fontWeight:600,marginBottom:6}},"尚無行程"),
         h("div",{style:{fontSize:13}},"點「建立行程」或輸入邀請碼加入")
       ),
-      trips.map(trip=>h("div",{key:trip.code,style:{background:"#fff",borderRadius:18,marginBottom:12,boxShadow:"0 1px 4px rgba(0,0,0,.06)",overflow:"hidden"}},
-        h("div",{onClick:()=>onOpen(trip.code),style:{padding:"16px 18px",display:"flex",alignItems:"center",cursor:"pointer"}},
-          h("div",{style:{fontSize:36,marginRight:14,lineHeight:1}},trip.emoji),
-          h("div",{style:{flex:1,minWidth:0}},
-            h("div",{style:{fontWeight:700,color:"#1e293b",fontSize:16}},trip.name),
-            h("div",{style:{color:"#94a3b8",fontSize:12,marginTop:3}},trip.members?.join(" · ")||""),
-            h("div",{style:{marginTop:4}},h("span",{style:{background:"#f1f5f9",borderRadius:6,padding:"2px 8px",fontSize:11,color:"#64748b",fontWeight:700,letterSpacing:2}},trip.code))
+      trips.map(trip=>{
+        const dateStr=fmtTripDate(trip.startDate,trip.endDate);
+        const thumbColors=[
+          ["#1e3a5f","#3b82f6"],["#1a3a2e","#10b981"],["#3b1a1a","#ef4444"],
+          ["#2d1a3b","#8b5cf6"],["#1a2e3b","#0ea5e9"],["#3b2a0a","#f59e0b"]
+        ];
+        const tc=thumbColors[trips.indexOf(trip)%thumbColors.length];
+        return h("div",{key:trip.code,style:{background:"#fff",borderRadius:20,marginBottom:12,boxShadow:"0 2px 8px rgba(0,0,0,.06)",overflow:"hidden"}},
+          h("div",{onClick:()=>{setDelCode(null);onOpen(trip.code);},style:{padding:"14px 16px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}},
+            /* Emoji thumbnail */
+            h("div",{style:{
+              width:72,height:72,borderRadius:14,flexShrink:0,
+              background:`linear-gradient(135deg,${tc[0]},${tc[1]})`,
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:32
+            }},trip.emoji),
+            /* Info */
+            h("div",{style:{flex:1,minWidth:0}},
+              h("div",{style:{fontWeight:700,color:"#0f172a",fontSize:16,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},trip.name),
+              trip.creator&&h("div",{style:{color:"#64748b",fontSize:12,marginBottom:2}},"Trip Creator: "+trip.creator),
+              dateStr&&h("div",{style:{color:"#64748b",fontSize:12}},"Travel Date: "+dateStr)
+            ),
+            h("div",{style:{color:"#cbd5e1",fontSize:18,flexShrink:0}},"›")
           ),
-          h("div",{style:{color:"#94a3b8",fontSize:20}},"›")
-        ),
-        h("div",{style:{borderTop:"1px solid #f8fafc",padding:"8px 18px",display:"flex",justifyContent:"flex-end"}},
-          delCode===trip.code
-            ?h("div",{style:{display:"flex",gap:8,alignItems:"center"}},
-                h("span",{style:{fontSize:12,color:"#64748b"}},"從清單移除？"),
-                h("button",{onClick:()=>setDelCode(null),style:{fontSize:12,color:"#64748b",background:"none",border:"1px solid #e2e8f0",borderRadius:8,padding:"4px 12px",cursor:"pointer"}},"取消"),
-                h("button",{onClick:()=>{onRemove(trip.code);setDelCode(null);},style:{fontSize:12,color:"#fff",background:"#ef4444",border:"none",borderRadius:8,padding:"4px 12px",cursor:"pointer",fontWeight:600}},"移除")
-              )
-            :h("button",{onClick:e=>{e.stopPropagation();setDelCode(trip.code);},style:{fontSize:12,color:"#fca5a5",background:"none",border:"none",cursor:"pointer"}},"從我的清單移除")
-        )
-      ))
+          /* Bottom bar */
+          h("div",{style:{padding:"8px 16px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            h("span",{style:{background:"#f1f5f9",borderRadius:20,padding:"3px 12px",fontSize:12,color:"#475569",fontWeight:700,letterSpacing:2}},trip.code),
+            delCode===trip.code
+              ?h("div",{style:{display:"flex",gap:8,alignItems:"center"}},
+                  h("span",{style:{fontSize:12,color:"#64748b"}},"確定移除？"),
+                  h("button",{onClick:()=>setDelCode(null),style:{fontSize:12,color:"#64748b",background:"none",border:"1px solid #e2e8f0",borderRadius:8,padding:"3px 10px",cursor:"pointer"}},"取消"),
+                  h("button",{onClick:()=>{onRemove(trip.code);setDelCode(null);},style:{fontSize:12,color:"#fff",background:"#ef4444",border:"none",borderRadius:8,padding:"3px 10px",cursor:"pointer",fontWeight:600}},"移除")
+                )
+              :h("button",{onClick:e=>{e.stopPropagation();setDelCode(trip.code);},
+                  style:{width:34,height:34,borderRadius:"50%",background:"#fef2f2",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}},
+                  "🗑️")
+          )
+        );
+      })
     ),
     h("div",{style:{textAlign:"center",padding:"24px 0 40px",color:"#94a3b8",fontSize:12}},
       "IG ",h("a",{href:"https://www.instagram.com/senbei.store",target:"_blank",style:{color:"#38bdf8",textDecoration:"none",fontWeight:600}},"@senbei.store")," 監製此網站"
