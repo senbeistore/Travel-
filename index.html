@@ -122,6 +122,26 @@ function PieChart({name,memberColor,items,cats}){
   );
 }
 
+/* ── Who Am I Panel ── */
+function WhoAmIPanel({onConfirm}){
+  const[name,setName]=useState("");
+  return h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",zIndex:200,display:"flex",alignItems:"flex-end"}},
+    h("div",{style:{width:"100%",background:"#fff",borderRadius:"24px 24px 0 0",padding:28,paddingBottom:44}},
+      h("div",{style:{fontWeight:800,fontSize:20,color:"#0f172a",marginBottom:6}},"你的名字是？"),
+      h("div",{style:{fontSize:13,color:"#64748b",lineHeight:1.6,marginBottom:20}},"輸入後會加入此行程的成員，記帳時預設由你付款。"),
+      h("input",{autoFocus:true,value:name,onChange:e=>setName(e.target.value),
+        onKeyDown:e=>e.key==="Enter"&&name.trim()&&onConfirm(name.trim()),
+        placeholder:"例：媽媽、小明、阿嬤…",
+        style:{width:"100%",border:"2px solid #e2e8f0",borderRadius:14,padding:"14px 16px",fontSize:17,outline:"none",color:"#0f172a",marginBottom:16,boxSizing:"border-box"}}),
+      h("button",{onClick:()=>name.trim()&&onConfirm(name.trim()),disabled:!name.trim(),
+        style:{width:"100%",padding:"14px 0",border:"none",borderRadius:14,
+          background:name.trim()?"#1a2744":"#e2e8f0",
+          color:name.trim()?"#fff":"#94a3b8",fontWeight:700,fontSize:16,cursor:"pointer"}},
+        "加入行程")
+    )
+  );
+}
+
 /* ── App ── */
 function App(){
   const[view,setView]=useState("home");
@@ -170,8 +190,8 @@ function App(){
       const data=await dbLoad(code);
       if(!data)throw new Error("找不到行程，請確認邀請碼");
       const saved=localStorage.getItem("tl-who-"+code);
-      if(!saved&&(data.members||[]).length>1){
-        setWhoAmI({code,members:data.members,data});
+      if(!saved){
+        setWhoAmI({code,data});
       }else{
         setTripData(data);setActiveCode(code);setView("trip");subscribeTrip(code);
       }
@@ -218,8 +238,8 @@ function App(){
       if(!data)throw new Error("找不到行程，請確認邀請碼");
       saveMyTrips([...myTrips,{code:clean,name:data.name,emoji:data.emoji,members:data.members,created:data.created,creator:data.creator,startDate:data.startDate,endDate:data.endDate}]);
       const saved=localStorage.getItem("tl-who-"+clean);
-      if(!saved&&(data.members||[]).length>1){
-        setWhoAmI({code:clean,members:data.members,data});
+      if(!saved){
+        setWhoAmI({code:clean,data});
       }else{
         setTripData(data);setActiveCode(clean);setView("trip");subscribeTrip(clean);
       }
@@ -243,23 +263,20 @@ function App(){
       onOpen:openTrip,onJoin:joinTrip,onCreate:createTrip,
       onRemove:code=>saveMyTrips(myTrips.filter(t=>t.code!==code))
     }),
-    whoAmI&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",zIndex:200,display:"flex",alignItems:"flex-end"}},
-      h("div",{style:{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:24,paddingBottom:40}},
-        h("div",{style:{fontWeight:700,fontSize:18,color:"#1e293b",marginBottom:6}},"你是哪位成員？"),
-        h("div",{style:{fontSize:13,color:"#64748b",marginBottom:20}},"選擇後，記帳時會預設由你付款"),
-        h("div",{style:{display:"flex",flexDirection:"column",gap:10}},
-          (whoAmI.members||[]).map((m,i)=>
-            h("button",{key:m,onClick:()=>{
-              localStorage.setItem("tl-who-"+whoAmI.code,m);
-              setTripData(whoAmI.data);setActiveCode(whoAmI.code);
-              setWhoAmI(null);setView("trip");subscribeTrip(whoAmI.code);
-            },style:{padding:"14px 20px",border:"2px solid",borderColor:COLORS[i%COLORS.length],borderRadius:14,background:"#fff",color:"#1e293b",fontWeight:700,fontSize:16,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:12}},
-              h("div",{style:{width:12,height:12,borderRadius:"50%",background:COLORS[i%COLORS.length]}}),m
-            )
-          )
-        )
-      )
-    ),
+    whoAmI&&h(WhoAmIPanel,{
+      onConfirm:async(name)=>{
+        const{code,data}=whoAmI;
+        localStorage.setItem("tl-who-"+code,name);
+        // Add to members if not already there
+        let updated=data;
+        if(!(data.members||[]).includes(name)){
+          updated={...data,members:[...(data.members||[]),name]};
+          await dbSave(code,updated).catch(()=>{});
+          saveMyTrips(myTrips.map(t=>t.code===code?{...t,members:updated.members}:t));
+        }
+        setTripData(updated);setActiveCode(code);setWhoAmI(null);setView("trip");subscribeTrip(code);
+      }
+    }),
     loading&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300}},
       h("div",{style:{background:"#1e293b",color:"#94a3b8",padding:"20px 32px",borderRadius:16,fontSize:14}},"載入中…")
     )
@@ -295,27 +312,32 @@ function HomeScreen({trips,loading,onOpen,onJoin,onCreate,onRemove}){
 
   // World map grid style
   const mapBg={
-    background:"linear-gradient(160deg,#0c1525 0%,#1e293b 55%,#0f1e35 100%)",
-    backgroundImage:"linear-gradient(rgba(148,163,184,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,0.07) 1px,transparent 1px)",
-    backgroundSize:"32px 32px",
+    backgroundColor:"#1a2744",
+    backgroundImage:"radial-gradient(circle at 1.5px 1.5px,rgba(148,163,184,0.18) 1.5px,transparent 0)",
+    backgroundSize:"28px 28px",
   };
 
   return h("div",{style:{background:"#f1f5f9",minHeight:"100vh"}},
     /* Header with map background */
     h("div",{style:{...mapBg,padding:"52px 20px 24px",position:"relative",overflow:"hidden"}},
-      /* Decorative circles (globe feel) */
-      h("div",{style:{position:"absolute",top:"-60px",right:"-60px",width:220,height:220,borderRadius:"50%",border:"1px solid rgba(148,163,184,0.1)",pointerEvents:"none"}}),
-      h("div",{style:{position:"absolute",top:"-30px",right:"-30px",width:140,height:140,borderRadius:"50%",border:"1px solid rgba(148,163,184,0.08)",pointerEvents:"none"}}),
+      /* Decorative arcs */
+      h("div",{style:{position:"absolute",top:-80,right:-80,width:260,height:260,borderRadius:"50%",border:"1.5px solid rgba(56,189,248,0.15)",pointerEvents:"none"}}),
+      h("div",{style:{position:"absolute",top:-40,right:-40,width:160,height:160,borderRadius:"50%",border:"1.5px solid rgba(56,189,248,0.1)",pointerEvents:"none"}}),
+      h("div",{style:{position:"absolute",bottom:-60,left:-60,width:200,height:200,borderRadius:"50%",border:"1px solid rgba(148,163,184,0.08)",pointerEvents:"none"}}),
       h("div",{style:{position:"relative",zIndex:1}},
-        h("div",{style:{color:"#94a3b8",fontSize:11,letterSpacing:2,textTransform:"uppercase",marginBottom:6}},"旅遊記帳"),
-        h("div",{style:{color:"#f8fafc",fontSize:28,fontWeight:800,marginBottom:20,letterSpacing:-.5}},"我的行程"),
+        h("div",{style:{color:"#64748b",fontSize:11,letterSpacing:3,textTransform:"uppercase",marginBottom:8,fontWeight:600}},"旅遊記帳"),
+        h("div",{style:{color:"#f8fafc",fontSize:30,fontWeight:900,marginBottom:24,letterSpacing:-1}},"我的行程"),
         h("div",{style:{display:"flex",gap:10}},
           h("button",{onClick:()=>{setShowNew(p=>!p);setShowJoin(false);},
-            style:{flex:1,padding:"12px 0",border:"none",borderRadius:50,background:showNew?"#38bdf8":"rgba(255,255,255,.13)",color:showNew?"#0f172a":"#f1f5f9",fontWeight:700,fontSize:14,cursor:"pointer",backdropFilter:"blur(8px)"}},
+            style:{flex:1,padding:"13px 0",border:"none",borderRadius:50,
+              background:showNew?"#38bdf8":"rgba(255,255,255,.15)",
+              color:showNew?"#0f172a":"#f1f5f9",fontWeight:700,fontSize:14,cursor:"pointer"}},
             "＋ 建立行程"),
           h("button",{onClick:()=>{setShowJoin(p=>!p);setShowNew(false);},
-            style:{flex:1,padding:"12px 0",border:"none",borderRadius:50,background:showJoin?"#38bdf8":"rgba(255,255,255,.13)",color:showJoin?"#0f172a":"#f1f5f9",fontWeight:700,fontSize:14,cursor:"pointer",backdropFilter:"blur(8px)"}},
-            "🔗 輸入邀請碼")
+            style:{flex:1,padding:"13px 0",border:"none",borderRadius:50,
+              background:showJoin?"#38bdf8":"rgba(255,255,255,.15)",
+              color:showJoin?"#0f172a":"#f1f5f9",fontWeight:700,fontSize:14,cursor:"pointer"}},
+            "🔗 邀請碼")
         )
       )
     ),
@@ -759,6 +781,9 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
       (trip.members||[]).some(m=>(byMember[m]||0)>0)&&h("div",null,
         h("div",{style:{fontSize:11,color:"#94a3b8",fontWeight:600,letterSpacing:.5,textTransform:"uppercase",margin:"16px 0 4px"}},"個人支出圓餅圖"),
         (trip.members||[]).map((m,i)=>h(PieChart,{key:m,name:m,memberColor:COLORS[i%COLORS.length],items,cats}))
+      ),
+      h("div",{style:{textAlign:"center",padding:"20px 0 8px",color:"#cbd5e1",fontSize:11}},
+        "senbei.store"
       )
     ),    /* Bottom bar */
     items.length>0&&h("div",{style:{position:"fixed",bottom:0,left:0,right:0,background:"#1e293b",padding:"14px 24px 28px",boxShadow:"0 -4px 24px rgba(0,0,0,.2)"}},
