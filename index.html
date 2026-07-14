@@ -742,15 +742,17 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
           )
         ),
 
-        /* Amount row with currency badge */
-        h("div",{style:{display:"flex",gap:8,alignItems:"stretch"}},
-          h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#1a2744",borderRadius:14,padding:"0 14px",flexShrink:0,minWidth:62,gap:2}},
-            h("div",{style:{fontSize:18,lineHeight:1}},cinfo?.flag),
-            h("div",{style:{color:"#38bdf8",fontSize:11,fontWeight:800,letterSpacing:1}},cur)
+        /* Amount */
+        h("div",{style:{display:"flex",gap:10,alignItems:"center"}},
+          h("div",{style:{flex:1,position:"relative"}},
+            h("span",{style:{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:"#94a3b8",fontSize:18,fontWeight:600,pointerEvents:"none"}},cinfo?.sym),
+            h("input",{ref:aRef,type:"number",inputMode:"decimal",placeholder:"0",value:amt,onChange:e=>setAmt(e.target.value),onKeyDown:e=>e.key==="Enter"&&add(),
+              style:{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:14,padding:"14px 14px 14px "+(cinfo?.sym?"36px":"14px"),fontSize:22,fontWeight:700,color:"#1e293b",outline:"none",background:"#f8fafc"}})
           ),
-          h("input",{ref:aRef,type:"number",inputMode:"decimal",placeholder:"0",value:amt,onChange:e=>setAmt(e.target.value),onKeyDown:e=>e.key==="Enter"&&add(),
-            style:{flex:1,border:"1.5px solid #e2e8f0",borderRadius:14,padding:"14px",fontSize:22,fontWeight:700,color:"#1e293b",outline:"none",background:"#f8fafc"}}),
-          btn("加入",add,{background:pAmt&&er?(pay==="card"?"#6366f1":"#1e293b"):"#e2e8f0",color:pAmt&&er?"#fff":"#94a3b8",borderRadius:14,padding:"14px 16px",fontSize:15,fontWeight:700,whiteSpace:"nowrap"})
+          btn("加入",add,{background:pAmt&&er?(pay==="card"?"#6366f1":"#1e293b"):"#e2e8f0",color:pAmt&&er?"#fff":"#94a3b8",borderRadius:14,padding:"14px 20px",fontSize:15,fontWeight:700,whiteSpace:"nowrap"})
+        ),
+        h("div",{style:{textAlign:"center",marginTop:6,fontSize:12,color:"#94a3b8"}},
+          "目前使用："+cinfo?.name
         ),
 
         /* Preview */
