@@ -47,8 +47,8 @@ const CUR=[
   {code:"JPY",name:"日圓",flag:"🇯🇵",sym:"¥",key:"jpy"},
   {code:"CNY",name:"人民幣",flag:"🇨🇳",sym:"¥",key:"cny"},
   {code:"KRW",name:"韓元",flag:"🇰🇷",sym:"₩",key:"krw"},
-  {code:"HKD",name:"港幣",flag:"🇭🇰",sym:"HK$",key:"hkd"},
-  {code:"USD",name:"美元",flag:"🇺🇸",sym:"$",key:"usd"},
+  {code:"HKD",name:"港幣",flag:"🇭🇰",sym:"",key:"hkd"},
+  {code:"USD",name:"美元",flag:"🇺🇸",sym:"",key:"usd"},
   {code:"EUR",name:"歐元",flag:"🇪🇺",sym:"€",key:"eur"},
   {code:"TWD",name:"台幣",flag:"🇹🇼",sym:"",key:"twd"},
 ];
@@ -542,6 +542,7 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
   const[eName,setEN]=useState("");
   const[eAmt,setEA]=useState("");
   const[eCat,setEC]=useState("");
+  const[eTwd,setETwd]=useState("");
   const[showCode,setShowCode]=useState(false);
   const[copied,setCopied]=useState(false);
   const[shared,setShared]=useState(false);
@@ -590,13 +591,17 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
     setIName("");setAmt("");setTimeout(()=>aRef.current?.focus(),50);
   };
   const del=id=>onUpdate(t=>({...t,items:(t.items||[]).filter(i=>i.id!==id)}));
-  const startE=item=>{setEId(item.id);setEN(item.name);setEA(item.amount.toString());setEC(item.category||cats[0]);};
+  const startE=item=>{setEId(item.id);setEN(item.name);setEA(item.amount.toString());setEC(item.category||cats[0]);setETwd("");};
   const cancelE=()=>setEId(null);
   const saveE=item=>{
     const na=parseFloat(eAmt);if(isNaN(na)||na<=0){cancelE();return;}
     const ir=(trip.cRates||{})[item.currency]??rates[item.currency];if(!ir){cancelE();return;}
     const base=na*ir;const f=item.payMethod==="card"?Math.round(base*pFee/100):0;
-    onUpdate(t=>({...t,items:(t.items||[]).map(i=>i.id===item.id?{...i,name:eName.trim(),amount:na,category:eCat,twd:Math.round(base),fee:f,total:Math.round(base)+f}:i)}));
+    // If user filled in actual TWD, use that directly
+    const manualTwd=parseFloat(eTwd);
+    const finalTotal=!isNaN(manualTwd)&&manualTwd>0?Math.round(manualTwd):Math.round(base)+f;
+    const finalTwd=!isNaN(manualTwd)&&manualTwd>0?Math.round(manualTwd)-f:Math.round(base);
+    onUpdate(t=>({...t,items:(t.items||[]).map(i=>i.id===item.id?{...i,name:eName.trim(),amount:na,category:eCat,twd:finalTwd,fee:f,total:finalTotal}:i)}));
     setEId(null);
   };
 
@@ -818,6 +823,20 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
                     h("input",{type:"number",inputMode:"decimal",value:eAmt,onChange:e=>setEA(e.target.value),onKeyDown:e=>e.key==="Enter"&&saveE(item),style:{flex:1,border:"1.5px solid #e2e8f0",borderRadius:10,padding:"8px 12px",fontSize:18,fontWeight:700,outline:"none",color:"#1e293b"}})
                   ),
                   ep!==null&&h("div",{style:{fontSize:12,color:"#64748b",marginBottom:10}},"≈ NT$"+(ep+ef).toLocaleString()),
+                  /* TWD override field */
+                  h("div",{style:{marginBottom:14}},
+                    h("div",{style:{fontSize:11,color:"#94a3b8",fontWeight:600,marginBottom:6}},"台幣實際金額（帳單出來後填，選填）"),
+                    h("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                      h("span",{style:{color:"#94a3b8",fontSize:14,flexShrink:0}},"NT$"),
+                      h("input",{type:"number",inputMode:"decimal",value:eTwd,
+                        onChange:e=>setETwd(e.target.value),
+                        placeholder:ep!==null?(ep+ef).toString():"",
+                        style:{flex:1,border:"1.5px solid "+(eTwd?"#10b981":"#e2e8f0"),borderRadius:10,
+                          padding:"8px 12px",fontSize:16,fontWeight:700,outline:"none",
+                          color:"#10b981",background:eTwd?"#f0fdf4":"#f8fafc"}})
+                    ),
+                    eTwd&&h("div",{style:{fontSize:11,color:"#10b981",marginTop:4}},"✓ 儲存後以此台幣金額為準")
+                  ),
                   h("div",{style:{display:"flex",gap:8}},
                     btn("取消",cancelE,{flex:1,padding:"9px 0",border:"1.5px solid #e2e8f0",borderRadius:10,background:"#fff",color:"#64748b",fontWeight:600,fontSize:13}),
                     btn("儲存",()=>saveE(item),{flex:2,padding:"9px 0",borderRadius:10,background:"#1e293b",color:"#fff",fontWeight:700,fontSize:13})
