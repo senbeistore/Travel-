@@ -174,6 +174,19 @@ function WhoAmIPanel({onConfirm,members}){
   );
 }
 
+/* ── Error Boundary ── */
+class ErrBound extends React.Component{
+  constructor(p){super(p);this.state={err:null};}
+  static getDerivedStateFromError(e){return{err:e};}
+  render(){
+    if(this.state.err)return h("div",{style:{padding:24,color:"#ef4444",fontSize:13,wordBreak:"break-all",background:"#fff",minHeight:"100vh"}},
+      "錯誤："+this.state.err.message,h("br"),
+      h("pre",{style:{fontSize:11,marginTop:12,color:"#64748b"}},this.state.err.stack?.slice(0,400))
+    );
+    return this.props.children;
+  }
+}
+
 /* ── App ── */
 function App(){
   const[view,setView]=useState("home");
@@ -732,7 +745,7 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
         /* Amount row with currency badge */
         h("div",{style:{display:"flex",gap:8,alignItems:"stretch"}},
           h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#1a2744",borderRadius:14,padding:"0 14px",flexShrink:0,minWidth:62,gap:2}},
-            h("div",{style:{fontSize:18,lineHeight:1}},currInfo?.flag),
+            h("div",{style:{fontSize:18,lineHeight:1}},cinfo?.flag),
             h("div",{style:{color:"#38bdf8",fontSize:11,fontWeight:800,letterSpacing:1}},cur)
           ),
           h("input",{ref:aRef,type:"number",inputMode:"decimal",placeholder:"0",value:amt,onChange:e=>setAmt(e.target.value),onKeyDown:e=>e.key==="Enter"&&add(),
@@ -884,7 +897,7 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(h(App));
+ReactDOM.createRoot(document.getElementById("root")).render(h(ErrBound,null,h(App)));
 </script>
 </body>
 </html>
