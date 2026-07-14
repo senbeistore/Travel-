@@ -157,6 +157,7 @@ function App(){
   const[tripData,setTripData]=useState(null);
   const[liveRates,setLiveRates]=useState({});
   const[loading,setLoading]=useState(false);
+  const[loaded,setLoaded]=useState(false);
   const[syncStatus,setSyncStatus]=useState("");
   const[whoAmI,setWhoAmI]=useState(null);
   const[pendingJoin,setPendingJoin]=useState(null); // {code, members, data} — pending identity selection
