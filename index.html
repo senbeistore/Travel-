@@ -236,27 +236,23 @@ function App(){
     return()=>document.removeEventListener("visibilitychange",handleVisibility);
   },[activeCode,subscribeTrip]);
 
-  // Polling fallback every 10s (for PWA mode where WebSocket is unreliable)
+  // Polling + focus refresh for PWA mode
   useEffect(()=>{
     if(!activeCode)return;
-    const interval=setInterval(async()=>{
-      try{
-        const data=await dbLoad(activeCode);
-        if(!data)return;
-        setTripData(prev=>{
-          if(!prev)return data;
-          const localIds=new Set((prev.items||[]).map(i=>i.id));
-          const remoteIds=new Set((data.items||[]).map(i=>i.id));
-          const hasNew=(data.items||[]).some(i=>!localIds.has(i.id));
-          const hasRemoved=(prev.items||[]).some(i=>!remoteIds.has(i.id));
-          const membersChanged=JSON.stringify(data.members)!==JSON.stringify(prev.members);
-          if(!hasNew&&!hasRemoved&&!membersChanged)return prev;
-          const pending=(prev.items||[]).filter(i=>!remoteIds.has(i.id));
-          return{...data,items:[...(data.items||[]),...pending]};
-        });
-      }catch{}
-    },10000);
-    return()=>clearInterval(interval);
+    const refresh=async()=>{
+      try{const data=await dbLoad(activeCode);if(data)setTripData(data);}catch{}
+    };
+    // Poll every 8 seconds
+    const interval=setInterval(refresh,8000);
+    // Also refresh on window focus (PWA switch back)
+    window.addEventListener("focus",refresh);
+    document.addEventListener("visibilitychange",()=>{
+      if(document.visibilityState==="visible")refresh();
+    });
+    return()=>{
+      clearInterval(interval);
+      window.removeEventListener("focus",refresh);
+    };
   },[activeCode]);
 
   const subscribeTrip=useCallback((code)=>{
