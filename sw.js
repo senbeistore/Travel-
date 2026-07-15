@@ -1,4 +1,4 @@
-const CACHE = 'senbei-travel-v2';
+const CACHE = 'senbei-travel-v3';
 
 self.addEventListener('install', e => {
   e.waitUntil(
