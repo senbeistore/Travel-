@@ -254,7 +254,9 @@ function App(){
             // If we saved recently (<800ms ago), keep pending local additions not yet in remote
             const freshSave=Date.now()-justSavedRef.current<800;
             const pendingLocal=freshSave?(prev.items||[]).filter(i=>!remoteIds.has(i.id)):[];
-            return{...remote,items:[...(remote.items||[]),...pendingLocal]};
+            // Members: union of local + remote so newly joined members are never lost
+            const mergedMembers=[...new Set([...(prev.members||[]),...(remote.members||[])])];
+            return{...remote,members:mergedMembers,items:[...(remote.items||[]),...pendingLocal]};
           });
         })
       .subscribe();
@@ -348,7 +350,6 @@ function App(){
       onConfirm:async(name)=>{
         const{code,data}=whoAmI;
         localStorage.setItem("tl-who-"+code,name);
-        // Add to members if not already there
         let updated=data;
         if(!(data.members||[]).includes(name)){
           updated={...data,members:[...(data.members||[]),name]};
