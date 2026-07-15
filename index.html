@@ -131,12 +131,15 @@ function PieChart({name,memberColor,items,cats}){
 }
 
 /* ── Who Am I Panel ── */
-function WhoAmIPanel({onConfirm,members}){
+function WhoAmIPanel({onConfirm,members,onCancel}){
   const[name,setName]=useState("");
   const matched=members.find(m=>m.trim()===name.trim());
   return h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",zIndex:200,display:"flex",alignItems:"flex-end"}},
     h("div",{style:{width:"100%",background:"#fff",borderRadius:"24px 24px 0 0",padding:28,paddingBottom:44}},
-      h("div",{style:{fontWeight:800,fontSize:20,color:"#0f172a",marginBottom:6}},"你叫什麼名字？"),
+      h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
+        h("div",{style:{fontWeight:800,fontSize:20,color:"#0f172a"}},"你叫什麼名字？"),
+        onCancel&&h("button",{onClick:onCancel,style:{background:"none",border:"none",fontSize:26,color:"#94a3b8",cursor:"pointer",padding:"0 4px",lineHeight:1}},"×")
+      ),
       h("div",{style:{fontSize:13,color:"#64748b",lineHeight:1.6,marginBottom:20}},"輸入你的名字加入行程，記帳時預設由你付款。"),
       h("input",{autoFocus:true,value:name,onChange:e=>setName(e.target.value),
         onKeyDown:e=>e.key==="Enter"&&name.trim()&&onConfirm(name.trim()),
@@ -922,6 +925,7 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate,onRefresh}){
     /* Identity change panel */
     showWhoAmI&&h(WhoAmIPanel,{
       members:trip.members||[],
+      onCancel:()=>setShowWhoAmI(false),
       onConfirm:async(name)=>{
         localStorage.setItem("tl-who-"+code,name);
         setMyIdentity(name);
