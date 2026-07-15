@@ -521,7 +521,7 @@ function HomeScreen({trips,loading,onOpen,onJoin,onCreate,onRemove}){
 /* ── Trip Screen ── */
 function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
   const cats=trip.categories||DEFAULT_CATS;
-  const myIdentity=localStorage.getItem("tl-who-"+code)||trip.members?.[0]||"我";
+  const[myIdentity,setMyIdentity]=useState(localStorage.getItem("tl-who-"+code)||trip.members?.[0]||"我");
   const savedCur=localStorage.getItem("tl-cur-"+code)||"JPY";
   const[cur,setCur]=useState(savedCur);
 
@@ -533,7 +533,7 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
   const[fee,setFee]=useState("1.5");
   const[by,setBy]=useState(myIdentity);
 
-  const setByAndSave=m=>{setBy(m);localStorage.setItem("tl-who-"+code,m);};
+  const setByAndSave=m=>{setBy(m);};
   const[editR,setEditR]=useState(false);
   const[rIn,setRIn]=useState("");
   const[inv,setInv]=useState(false);
@@ -543,6 +543,7 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
   const[eAmt,setEA]=useState("");
   const[eCat,setEC]=useState("");
   const[eTwd,setETwd]=useState("");
+  const[showWhoAmI,setShowWhoAmI]=useState(false);
   const[showCode,setShowCode]=useState(false);
   const[copied,setCopied]=useState(false);
   const[shared,setShared]=useState(false);
@@ -629,7 +630,8 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
     h("div",{style:{background:"#1e293b",padding:"20px 16px 0",position:"sticky",top:0,zIndex:10}},
       h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
         btn("‹ 返回",onBack,{background:"none",color:"#38bdf8",fontSize:15,padding:0,fontWeight:600}),
-        h("div",{style:{display:"flex",alignItems:"center",gap:12}},
+        h("div",{style:{display:"flex",alignItems:"center",gap:8}},
+          btn("我是 "+myIdentity,()=>setShowWhoAmI(true),{background:"rgba(255,255,255,.1)",color:"#94a3b8",borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:600}),
           btn("↻",async()=>{
             try{const data=await dbLoad(code);if(data)onUpdate(()=>data);}catch{}
           },{background:"rgba(255,255,255,.1)",color:"#94a3b8",borderRadius:8,padding:"4px 10px",fontSize:18}),
@@ -914,7 +916,17 @@ function TripScreen({trip,code,rates,syncStatus,onBack,onUpdate}){
         h("div",null,h("div",{style:{color:"#64748b",fontSize:12}},"台幣合計"),h("div",{style:{color:"#94a3b8",fontSize:11,marginTop:1}},items.length+" 筆消費")),
         h("div",{style:{color:"#34d399",fontSize:34,fontWeight:900,letterSpacing:-1}},"NT$"+grand.toLocaleString())
       )
-    )
+    ),
+    /* Identity change panel */
+    showWhoAmI&&h(WhoAmIPanel,{
+      members:trip.members||[],
+      onConfirm:(name)=>{
+        localStorage.setItem("tl-who-"+code,name);
+        setBy(name);
+        setMyIdentity(name);
+        setShowWhoAmI(false);
+      }
+    })
   );
 }
 
