@@ -31,7 +31,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 setTimeout(function(){
   var el=document.getElementById('root');
   if(el&&el.textContent.includes('載入中')){
-    el.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#1e293b;font-family:system-ui;gap:16px;padding:24px;text-align:center"><div style="font-size:40px">✈️</div><div style="color:#f1f5f9;font-size:16px;font-weight:600">載入失敗</div><div style="color:#64748b;font-size:13px">請確認網路後重試</div><button onclick="location.reload()" style="background:#38bdf8;color:#0f172a;border:none;border-radius:12px;padding:13px 32px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px">重新整理</button></div>';
+    el.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#1e293b;font-family:system-ui;gap:16px;padding:24px;text-align:center"><div style="font-size:40px">✈️</div><div style="color:#f1f5f9;font-size:16px;font-weight:600">載入失敗</div><div style="color:#64748b;font-size:13px;line-height:1.8">請確認網路後重試<br>持續無法使用請私訊<br><span style="color:#38bdf8">@senbei.store</span></div><button onclick="location.reload()" style="background:#38bdf8;color:#0f172a;border:none;border-radius:12px;padding:13px 32px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px">重新整理</button></div>';
   }
 },8000);
 </script>
@@ -193,9 +193,11 @@ class ErrBound extends React.Component{
   constructor(p){super(p);this.state={err:null};}
   static getDerivedStateFromError(e){return{err:e};}
   render(){
-    if(this.state.err)return h("div",{style:{padding:24,color:"#ef4444",fontSize:13,wordBreak:"break-all",background:"#fff",minHeight:"100vh"}},
-      "錯誤："+this.state.err.message,h("br"),
-      h("pre",{style:{fontSize:11,marginTop:12,color:"#64748b"}},this.state.err.stack?.slice(0,400))
+    if(this.state.err)return h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",background:"#1e293b",fontFamily:"system-ui",gap:16,padding:24,textAlign:"center"}},
+      h("div",{style:{fontSize:40}},"✈️"),
+      h("div",{style:{color:"#f1f5f9",fontSize:16,fontWeight:600}},"出了一點問題"),
+      h("div",{style:{color:"#64748b",fontSize:13,lineHeight:1.8}},"請重新整理後再試",h("br"),"持續無法使用請私訊開發者",h("br"),h("span",{style:{color:"#38bdf8"}}),"@senbei.store"),
+      h("button",{onClick:()=>location.reload(),style:{background:"#38bdf8",color:"#0f172a",border:"none",borderRadius:12,padding:"13px 32px",fontSize:15,fontWeight:700,cursor:"pointer",marginTop:8}},"重新整理")
     );
     return this.props.children;
   }
