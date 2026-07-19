@@ -535,8 +535,10 @@ function HomeScreen({trips,loading,onOpen,onJoin,onCreate,onRemove}){
         );
       })
     ),
-    h("div",{style:{textAlign:"center",padding:"24px 0 40px",color:"#94a3b8",fontSize:12}},
-      "由 ",h("a",{href:"https://www.instagram.com/senbei.store",target:"_blank",style:{color:"#94a3b8",textDecoration:"none"}},"仙貝童裝 @senbei.store")," 為家庭旅遊打造"
+    h("div",{style:{background:"#1a2744",padding:"20px 16px 32px",textAlign:"center",marginTop:8}},
+      h("div",{style:{color:"#e2e8f0",fontSize:13,fontWeight:600}},
+        "由 ",h("a",{href:"https://www.instagram.com/senbei.store",target:"_blank",style:{color:"#38bdf8",textDecoration:"none",fontWeight:700}},"仙貝童裝 @senbei.store")," 為家庭旅遊打造"
+      )
     )
   );
 }
